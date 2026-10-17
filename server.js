@@ -17,9 +17,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ----------------- SITE SETTINGS APIS -----------------
 
-app.get('/api/settings', (req, res) => {
+app.get('/api/settings', async (req, res) => {
   try {
-    const settings = db.getSiteSettings();
+    const settings = await db.getSiteSettings();
     res.json({ success: true, data: settings });
   } catch (error) {
     console.error('Error fetching settings:', error);
@@ -27,10 +27,10 @@ app.get('/api/settings', (req, res) => {
   }
 });
 
-app.put('/api/settings', (req, res) => {
+app.put('/api/settings', async (req, res) => {
   try {
-    db.updateSiteSettings(req.body);
-    const updated = db.getSiteSettings();
+    await db.updateSiteSettings(req.body);
+    const updated = await db.getSiteSettings();
     res.json({ success: true, message: 'Settings updated successfully', data: updated });
   } catch (error) {
     console.error('Error updating settings:', error);
@@ -41,10 +41,10 @@ app.put('/api/settings', (req, res) => {
 // ----------------- PROPERTY APIS -----------------
 
 // 1. GET /api/properties (Filter, Search, Sort)
-app.get('/api/properties', (req, res) => {
+app.get('/api/properties', async (req, res) => {
   try {
     const { locality, bhk, status, kind, minPrice, maxPrice, budget, search, sort } = req.query;
-    const properties = db.getAllProperties({
+    const properties = await db.getAllProperties({
       locality,
       bhk,
       status,
@@ -63,9 +63,9 @@ app.get('/api/properties', (req, res) => {
 });
 
 // 2. GET /api/properties/:id (Single property)
-app.get('/api/properties/:id', (req, res) => {
+app.get('/api/properties/:id', async (req, res) => {
   try {
-    const property = db.getPropertyById(req.params.id);
+    const property = await db.getPropertyById(req.params.id);
     if (!property) {
       return res.status(404).json({ success: false, message: 'Property not found' });
     }
@@ -77,15 +77,15 @@ app.get('/api/properties/:id', (req, res) => {
 });
 
 // 3. POST /api/properties (Create new property)
-app.post('/api/properties', (req, res) => {
+app.post('/api/properties', async (req, res) => {
   try {
     const { title, location, price, bhk, area } = req.body;
     if (!title || !location || !price || !bhk || !area) {
       return res.status(400).json({ success: false, message: 'Missing required property fields' });
     }
 
-    const newId = db.createProperty(req.body);
-    const created = db.getPropertyById(newId);
+    const newId = await db.createProperty(req.body);
+    const created = await db.getPropertyById(newId);
     res.status(201).json({ success: true, message: 'Property created successfully', data: created });
   } catch (error) {
     console.error('Error creating property:', error);
@@ -94,15 +94,15 @@ app.post('/api/properties', (req, res) => {
 });
 
 // 4. PUT /api/properties/:id (Update property)
-app.put('/api/properties/:id', (req, res) => {
+app.put('/api/properties/:id', async (req, res) => {
   try {
-    const existing = db.getPropertyById(req.params.id);
+    const existing = await db.getPropertyById(req.params.id);
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Property not found' });
     }
 
-    db.updateProperty(req.params.id, req.body);
-    const updated = db.getPropertyById(req.params.id);
+    await db.updateProperty(req.params.id, req.body);
+    const updated = await db.getPropertyById(req.params.id);
     res.json({ success: true, message: 'Property updated successfully', data: updated });
   } catch (error) {
     console.error('Error updating property:', error);
@@ -111,14 +111,14 @@ app.put('/api/properties/:id', (req, res) => {
 });
 
 // 5. DELETE /api/properties/:id (Delete property)
-app.delete('/api/properties/:id', (req, res) => {
+app.delete('/api/properties/:id', async (req, res) => {
   try {
-    const existing = db.getPropertyById(req.params.id);
+    const existing = await db.getPropertyById(req.params.id);
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Property not found' });
     }
 
-    db.deleteProperty(req.params.id);
+    await db.deleteProperty(req.params.id);
     res.json({ success: true, message: 'Property deleted successfully' });
   } catch (error) {
     console.error('Error deleting property:', error);
@@ -128,9 +128,9 @@ app.delete('/api/properties/:id', (req, res) => {
 
 // ----------------- FEATURED PROJECTS (HERO SLIDES) APIS -----------------
 
-app.get('/api/featured-projects', (req, res) => {
+app.get('/api/featured-projects', async (req, res) => {
   try {
-    const projects = db.getFeaturedProjects();
+    const projects = await db.getFeaturedProjects();
     res.json({ success: true, count: projects.length, data: projects });
   } catch (error) {
     console.error('Error fetching projects:', error);
@@ -138,13 +138,13 @@ app.get('/api/featured-projects', (req, res) => {
   }
 });
 
-app.post('/api/featured-projects', (req, res) => {
+app.post('/api/featured-projects', async (req, res) => {
   try {
     const { name, image } = req.body;
     if (!name || !image) {
       return res.status(400).json({ success: false, message: 'Project name and Image URL are required' });
     }
-    const id = db.createFeaturedProject(req.body);
+    const id = await db.createFeaturedProject(req.body);
     res.status(201).json({ success: true, message: 'Slide created successfully', id });
   } catch (error) {
     console.error('Error creating slide:', error);
@@ -152,9 +152,9 @@ app.post('/api/featured-projects', (req, res) => {
   }
 });
 
-app.put('/api/featured-projects/:id', (req, res) => {
+app.put('/api/featured-projects/:id', async (req, res) => {
   try {
-    db.updateFeaturedProject(req.params.id, req.body);
+    await db.updateFeaturedProject(req.params.id, req.body);
     res.json({ success: true, message: 'Slide updated successfully' });
   } catch (error) {
     console.error('Error updating slide:', error);
@@ -162,9 +162,9 @@ app.put('/api/featured-projects/:id', (req, res) => {
   }
 });
 
-app.delete('/api/featured-projects/:id', (req, res) => {
+app.delete('/api/featured-projects/:id', async (req, res) => {
   try {
-    db.deleteFeaturedProject(req.params.id);
+    await db.deleteFeaturedProject(req.params.id);
     res.json({ success: true, message: 'Slide deleted successfully' });
   } catch (error) {
     console.error('Error deleting slide:', error);
@@ -173,45 +173,55 @@ app.delete('/api/featured-projects/:id', (req, res) => {
 });
 
 // ----------------- BROCHURE PDF UPLOAD API -----------------
-app.post('/api/upload-pdf', (req, res) => {
+async function storeMedia(req, res) {
   try {
-    const { filename, fileData } = req.body;
+    const { filename, fileData, contentType } = req.body;
     if (!fileData) {
-      return res.status(400).json({ success: false, message: 'No file data provided' });
+      return res.status(400).json({ success: false, message: 'No file data provided.' });
     }
-
-    const uploadDir = path.join(__dirname, 'public', 'uploads', 'brochures');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    const baseName = (filename || 'brochure.pdf').replace(/[^a-zA-Z0-9._-]/g, '_');
-    const uniqueFilename = `${Date.now()}_${baseName}`;
-    const filePath = path.join(uploadDir, uniqueFilename);
-
     const base64Content = fileData.includes('base64,') ? fileData.split('base64,')[1] : fileData;
     const buffer = Buffer.from(base64Content, 'base64');
-    fs.writeFileSync(filePath, buffer);
-
-    const publicUrl = `/uploads/brochures/${uniqueFilename}`;
-    res.json({ success: true, message: 'PDF uploaded successfully', url: publicUrl });
+    const allowedTypes = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm']);
+    if (!allowedTypes.has(contentType) || buffer.length === 0 || buffer.length > 25 * 1024 * 1024) {
+      return res.status(400).json({ success: false, message: 'Use a supported image, MP4/WebM video, or PDF no larger than 25 MB.' });
+    }
+    const id = await db.createMediaAsset({ filename: (filename || 'upload').replace(/[^a-zA-Z0-9._-]/g, '_'), contentType, data: buffer });
+    res.status(201).json({ success: true, url: `/api/media/${id}` });
   } catch (error) {
-    console.error('Error uploading PDF:', error);
-    res.status(500).json({ success: false, message: 'Failed to upload PDF' });
+    console.error('Error storing media:', error);
+    res.status(500).json({ success: false, message: 'Failed to store media.' });
+  }
+}
+
+app.post('/api/media', storeMedia);
+app.post('/api/upload-pdf', (req, res) => {
+  req.body.contentType = req.body.contentType || 'application/pdf';
+  return storeMedia(req, res);
+});
+
+app.get('/api/media/:id', async (req, res) => {
+  try {
+    const media = await db.getMediaAsset(req.params.id);
+    if (!media) return res.status(404).json({ success: false, message: 'Media not found.' });
+    res.set({ 'Content-Type': media.content_type, 'Content-Length': media.size_bytes, 'Content-Disposition': `inline; filename="${media.filename.replace(/[\r\n"]/g, '_')}"` });
+    res.send(media.data);
+  } catch (error) {
+    console.error('Error reading media:', error);
+    res.status(500).json({ success: false, message: 'Failed to read media.' });
   }
 });
 
 // ----------------- ENQUIRIES / LEADS APIS -----------------
 
 // Submit new enquiry (Public)
-app.post('/api/enquiries', (req, res) => {
+app.post('/api/enquiries', async (req, res) => {
   try {
     const { name, phone, email, message, property_id, property_title } = req.body;
     if (!name || !phone) {
       return res.status(400).json({ success: false, message: 'Name and Phone number are required' });
     }
 
-    const id = db.createEnquiry({
+    const id = await db.createEnquiry({
       name,
       phone,
       email,
@@ -232,10 +242,10 @@ app.post('/api/enquiries', (req, res) => {
 });
 
 // Get all enquiries (Admin)
-app.get('/api/enquiries', (req, res) => {
+app.get('/api/enquiries', async (req, res) => {
   try {
     const { status } = req.query;
-    const enquiries = db.getAllEnquiries(status);
+    const enquiries = await db.getAllEnquiries(status);
     res.json({ success: true, count: enquiries.length, data: enquiries });
   } catch (error) {
     console.error('Error fetching enquiries:', error);
@@ -244,13 +254,13 @@ app.get('/api/enquiries', (req, res) => {
 });
 
 // Update enquiry status (Admin)
-app.patch('/api/enquiries/:id', (req, res) => {
+app.patch('/api/enquiries/:id', async (req, res) => {
   try {
     const { status } = req.body;
     if (!status) {
       return res.status(400).json({ success: false, message: 'Status is required' });
     }
-    db.updateEnquiryStatus(req.params.id, status);
+    await db.updateEnquiryStatus(req.params.id, status);
     res.json({ success: true, message: `Enquiry status updated to ${status}` });
   } catch (error) {
     console.error('Error updating enquiry status:', error);
@@ -259,9 +269,9 @@ app.patch('/api/enquiries/:id', (req, res) => {
 });
 
 // Delete enquiry (Admin)
-app.delete('/api/enquiries/:id', (req, res) => {
+app.delete('/api/enquiries/:id', async (req, res) => {
   try {
-    db.deleteEnquiry(req.params.id);
+    await db.deleteEnquiry(req.params.id);
     res.json({ success: true, message: 'Enquiry deleted successfully' });
   } catch (error) {
     console.error('Error deleting enquiry:', error);
@@ -271,9 +281,9 @@ app.delete('/api/enquiries/:id', (req, res) => {
 
 // ----------------- ANALYTICS & STATS APIS -----------------
 
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', async (req, res) => {
   try {
-    const stats = db.getStats();
+    const stats = await db.getStats();
     res.json({ success: true, data: stats });
   } catch (error) {
     console.error('Error fetching stats:', error);
@@ -291,8 +301,13 @@ app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`🚀 Vasati Properties Server is running at http://localhost:${PORT}`);
-  console.log(`📊 Admin Panel directly accessible at http://localhost:${PORT}/admin`);
-});
+// Start Server only after PostgreSQL schema and seed data are ready.
+db.initializeDatabase()
+  .then(() => app.listen(PORT, () => {
+    console.log(`🚀 Vasati Properties Server is running at http://localhost:${PORT}`);
+    console.log(`📊 Admin Panel directly accessible at http://localhost:${PORT}/admin`);
+  }))
+  .catch((error) => {
+    console.error('Unable to initialize PostgreSQL:', error);
+    process.exit(1);
+  });

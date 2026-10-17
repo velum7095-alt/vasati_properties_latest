@@ -6,16 +6,12 @@ echo " Starting Bangalore Real Estate Portal (DPDP Act 2023)"
 echo " Environment: ${NODE_ENV:-production}"
 echo "============================================================"
 
-# If DATABASE_URL is set, push Prisma schema and seed database
-if [ -n "$DATABASE_URL" ]; then
-  echo "=> Synchronizing PostgreSQL database schema..."
-  npx prisma db push --skip-generate || echo "Warning: prisma db push encountered a non-fatal issue, continuing..."
-
-  echo "=> Running statutory database seed (Bangalore RERA listings & admin)..."
-  node prisma/seed.js || echo "Warning: Seed script already applied or non-fatal issue."
-else
-  echo "=> Warning: DATABASE_URL not supplied. Running in fallback mode."
+if [ -z "$DATABASE_URL" ]; then
+  echo "=> DATABASE_URL is required for the PostgreSQL-backed application."
+  exit 1
 fi
+
+echo "=> PostgreSQL schema will be initialized by the application."
 
 echo "=> Launching Next.js production server on port ${PORT:-3000}..."
 exec node server.js
