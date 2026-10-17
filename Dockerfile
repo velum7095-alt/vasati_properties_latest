@@ -37,20 +37,15 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 # Non-root user for principle of least privilege
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs &&     adduser --system --uid 1001 nextjs
 
-# Copy Static Assets & Prisma Schema
+# Copy application runtime, static assets, and Prisma schema. The production
+# server is the Express API in server.js, backed by PostgreSQL.
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/server.js ./server.js
+COPY --from=builder --chown=nextjs:nodejs /app/db ./db
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
-
-# Copy Standalone Server & Static Chunks
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Copy Container Entrypoint Script
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./
@@ -60,8 +55,6 @@ USER nextjs
 
 EXPOSE 3000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/ || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3   CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/ || exit 1
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
-
