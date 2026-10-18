@@ -165,7 +165,7 @@
     </ul>
     <div class="sidebar-footer">
       Node.js v22 Engine<br>
-      SQLite DB: properties.db
+      PostgreSQL DB: vasati-data
     </div>
   </aside>
 
@@ -426,12 +426,26 @@
             </select>
           </div>
           <div class="form-group form-full">
-            <label>Image URL *</label>
-            <input type="url" id="formImage" placeholder="https://images.unsplash.com/..." required>
+            <label>Property Image (Upload File or Enter URL) *</label>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <input type="url" id="formImage" placeholder="https://images.unsplash.com/..." required style="flex:1;min-width:240px;">
+              <label class="btn btn-outline btn-sm" style="cursor:pointer;margin:0;display:inline-flex;align-items:center;gap:6px;">
+                🖼️ Choose Image
+                <input type="file" id="formImageFile" accept="image/jpeg,image/png,image/webp" style="display:none;">
+              </label>
+            </div>
+            <div id="imageUploadStatus" style="font-size:12px;color:#38bdf8;margin-top:4px;"></div>
           </div>
           <div class="form-group form-full">
-            <label>Video Tour Walkthrough URL (YouTube Embed / Link)</label>
-            <input type="url" id="formVideoUrl" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/...">
+            <label>Video Tour (Upload MP4/WebM or Enter YouTube URL)</label>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <input type="url" id="formVideoUrl" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..." style="flex:1;min-width:240px;">
+              <label class="btn btn-outline btn-sm" style="cursor:pointer;margin:0;display:inline-flex;align-items:center;gap:6px;">
+                🎥 Choose Video
+                <input type="file" id="formVideoFile" accept="video/mp4,video/webm" style="display:none;">
+              </label>
+            </div>
+            <div id="videoUploadStatus" style="font-size:12px;color:#38bdf8;margin-top:4px;"></div>
           </div>
           <div class="form-group form-full">
             <label>Project Brochure PDF (Upload File or Enter PDF URL)</label>
@@ -657,6 +671,8 @@
       document.getElementById('formImage').value = 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=1000&q=78';
       document.getElementById('formVideoUrl').value = '';
       document.getElementById('formBrochureUrl').value = '';
+      document.getElementById('imageUploadStatus').textContent = '';
+      document.getElementById('videoUploadStatus').textContent = '';
       document.getElementById('brochureUploadStatus').textContent = '';
       propModal.showModal();
     });
@@ -681,6 +697,8 @@
       document.getElementById('formImage').value = p.image;
       document.getElementById('formVideoUrl').value = p.video_url || '';
       document.getElementById('formBrochureUrl').value = p.brochure_url || '';
+      document.getElementById('imageUploadStatus').textContent = (p.image || '').startsWith('/api/media/') ? `Stored in database: ${p.image}` : '';
+      document.getElementById('videoUploadStatus').textContent = (p.video_url || '').startsWith('/api/media/') ? `Stored in database: ${p.video_url}` : '';
       document.getElementById('brochureUploadStatus').textContent = p.brochure_url ? `Attached: ${p.brochure_url}` : '';
       document.getElementById('formDescription').value = p.description || '';
       propModal.showModal();
@@ -731,6 +749,39 @@
         saveBtn.textContent = 'Save Property';
       }
     });
+
+    async function uploadMediaFile(file, inputId, statusId, acceptedTypes, successMessage) {
+      if (!file) return;
+      if (!acceptedTypes.includes(file.type)) {
+        showToast(`Please select a supported ${successMessage.toLowerCase()} file`);
+        return;
+      }
+      const status = document.getElementById(statusId);
+      status.textContent = '⏳ Uploading ' + file.name + '...';
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const res = await fetch('/api/media', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename: file.name, fileData: reader.result, contentType: file.type })
+          });
+          const data = await res.json();
+          if (!data.success) throw new Error(data.message || 'Upload failed');
+          document.getElementById(inputId).value = data.url;
+          status.textContent = '✅ Stored in database: ' + file.name;
+          showToast(`${successMessage} uploaded successfully!`);
+        } catch (err) {
+          status.textContent = '❌ Upload failed: ' + err.message;
+          showToast(`Failed to upload ${successMessage.toLowerCase()}`);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    document.getElementById('formImageFile').addEventListener('change', (e) =>
+      uploadMediaFile(e.target.files[0], 'formImage', 'imageUploadStatus', ['image/jpeg', 'image/png', 'image/webp'], 'Image'));
+    document.getElementById('formVideoFile').addEventListener('change', (e) =>
+      uploadMediaFile(e.target.files[0], 'formVideoUrl', 'videoUploadStatus', ['video/mp4', 'video/webm'], 'Video'));
 
     // Auto-upload PDF when file is selected
     document.getElementById('formBrochureFile').addEventListener('change', async (e) => {
