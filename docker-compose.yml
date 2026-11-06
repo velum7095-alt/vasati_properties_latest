@@ -1,8 +1,5 @@
-version: '3.8'
-
 # ------------------------------------------------------------------------------
-# BANGALORE REAL ESTATE DPDP PORTAL — DOCKER COMPOSE CONFIGURATION
-# Production deployment ready for Coolify, VPS, or local Docker environments
+# Vasati Properties — Docker Compose configuration
 # ------------------------------------------------------------------------------
 
 services:
@@ -12,21 +9,21 @@ services:
     container_name: bangalore_rera_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-dpdp_admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_super_secret_db_password_2026}
-      POSTGRES_DB: ${POSTGRES_DB:-bangalore_realestate_db}
+      POSTGRES_USER: ${POSTGRES_USER:-vasati_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-vasati_properties}
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
       - dpdp_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dpdp_admin} -d ${POSTGRES_DB:-bangalore_realestate_db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vasati_app} -d ${POSTGRES_DB:-vasati_properties}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
 
-  # 2. Next.js Application
+  # 2. Express application
   app:
     build:
       context: .
@@ -38,21 +35,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: "postgresql://${POSTGRES_USER:-dpdp_admin}:${POSTGRES_PASSWORD:-change_me_super_secret_db_password_2026}@db:5432/${POSTGRES_DB:-bangalore_realestate_db}?schema=public"
-      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
-      IP_HASH_SALT: ${IP_HASH_SALT:-dpdp_bangalore_production_salted_ip_hash}
-      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:-bangalore_admin_session_secret_change_in_prod}
-      ADMIN_DEFAULT_EMAIL: ${ADMIN_DEFAULT_EMAIL:-admin@example.com}
-      ADMIN_DEFAULT_PASSWORD: ${ADMIN_DEFAULT_PASSWORD:-ChangeMeInProduction#2026!}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
-      NEXT_PUBLIC_BUSINESS_NAME: ${NEXT_PUBLIC_BUSINESS_NAME:-[BUSINESS_NAME_PLACEHOLDER]}
-      NEXT_PUBLIC_BUSINESS_ADDRESS: ${NEXT_PUBLIC_BUSINESS_ADDRESS:-[BUSINESS_ADDRESS_PLACEHOLDER]}
-      NEXT_PUBLIC_AGENCY_KRERA_NO: ${NEXT_PUBLIC_AGENCY_KRERA_NO:-PRM/KA/RERA/1251/[YEAR]/AG/[NUMBER_PLACEHOLDER]}
-      NEXT_PUBLIC_GRIEVANCE_OFFICER_NAME: ${NEXT_PUBLIC_GRIEVANCE_OFFICER_NAME:-[GRIEVANCE_OFFICER_NAME_PLACEHOLDER]}
-      NEXT_PUBLIC_GRIEVANCE_OFFICER_EMAIL: ${NEXT_PUBLIC_GRIEVANCE_OFFICER_EMAIL:-grievance@example.com}
-      NEXT_PUBLIC_WHATSAPP_NUMBER: ${NEXT_PUBLIC_WHATSAPP_NUMBER:-916303420048}
-      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
-      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-vasati_app}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-vasati_properties}"
     depends_on:
       db:
         condition: service_healthy
@@ -66,4 +49,3 @@ networks:
 volumes:
   pgdata:
     driver: local
-
